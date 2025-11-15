@@ -15,6 +15,7 @@
     "workspaceContains:build.gradle.kts"
   ],
   "categories": [
+    "Linters",
     "Other"
   ],
   "keywords": [
