@@ -25,10 +25,15 @@ RepoGate is a powerful VS Code extension that acts as a security gatekeeper for 
 4. Click the `...` menu → `Install from VSIX...`
 5. Select the downloaded file
 6. Reload VS Code
+ 
+### From Marketplace
 
-### From Marketplace (Coming Soon)
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X` or `Cmd+Shift+X`)
+3. Search for "RepoGate"
+4. Click **Install**
 
-Search for "RepoGate" in the VS Code Extensions marketplace.
+Or install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=repogate.repogate ).
 
 ## Quick Start
 
