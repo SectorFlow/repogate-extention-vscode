@@ -16,6 +16,7 @@
     "workspaceContains:build.gradle.kts"
   ],
   "categories": [
+    "Programming Languages",
     "Linters",
     "Other"
   ],
