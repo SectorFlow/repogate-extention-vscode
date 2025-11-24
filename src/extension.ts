@@ -250,6 +250,11 @@ async function signInEntraID() {
             }
             
             await updateAuthStatus();
+            
+            // Reset bootstrap state to force fresh scan on sign-in
+            bootstrap.resetBootstrap();
+            logger.info('Bootstrap state reset after sign-in');
+            
             statusBar.setStatus(RepoGateStatus.CONNECTED, 'Connected');
             
             // Restart extension functionality
@@ -293,6 +298,11 @@ async function signInAPIToken() {
             }
             
             await updateAuthStatus();
+            
+            // Reset bootstrap state to force fresh scan on sign-in
+            bootstrap.resetBootstrap();
+            logger.info('Bootstrap state reset after sign-in');
+            
             statusBar.setStatus(RepoGateStatus.CONNECTED, 'Connected');
             
             // Restart extension functionality

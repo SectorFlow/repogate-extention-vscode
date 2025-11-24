@@ -353,11 +353,18 @@ export class AuthManager {
             const config = vscode.workspace.getConfiguration('repogate');
             const apiUrl = config.get<string>('apiUrl') || 'https://app.repogate.io/api/v1';
 
+            const accessToken = await this.context.secrets.get(ACCESS_TOKEN_KEY);
+            
             logger.info('Refreshing access token using refresh token');
             const response = await axios.post<TokenRefreshResponse>(
                 `${apiUrl}/auth/entra/refresh`,
                 {
                     refreshToken: refreshToken  // Send refresh token in body
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken || ''}`  // Send expired access token for session ID
+                    }
                 }
             );
 
