@@ -10,9 +10,9 @@ export class OAuthService {
 
     /**
      * Start OAuth authentication flow
-     * Returns Entra ID token on success, undefined on failure/cancellation
+     * Returns tokens on success, undefined on failure/cancellation
      */
-    async authenticate(tenantId: string, clientId: string, redirectUri: string): Promise<string | undefined> {
+    async authenticate(tenantId: string, clientId: string, redirectUri: string): Promise<{ accessToken: string; refreshToken?: string } | undefined> {
         try {
             logger.info('=== Starting EntraID OAuth authentication flow ===');
             logger.info(`Tenant ID: ${tenantId}`);
@@ -139,7 +139,7 @@ export class OAuthService {
     /**
      * Listen for OAuth callback
      */
-    private async listenForCallback(): Promise<string | undefined> {
+    private async listenForCallback(): Promise<{ accessToken: string; refreshToken?: string } | undefined> {
         return new Promise((resolve) => {
             // Register URI handler
             this.callbackDisposable = vscode.window.registerUriHandler({
@@ -153,11 +153,20 @@ export class OAuthService {
                         const decodedQuery = decodeURIComponent(uri.query);
                         logger.info(`Decoded query: ${decodedQuery}`);
                         
-                        const token = new URLSearchParams(decodedQuery).get('token');
+                        const params = new URLSearchParams(decodedQuery);
+                        const token = params.get('token');
+                        const refreshToken = params.get('refreshToken');
+                        
                         if (token) {
                             logger.info('Entra ID token extracted from callback');
                             logger.info(`Token length: ${token.length}`);
-                            resolve(token);
+                            if (refreshToken) {
+                                logger.info('Refresh token extracted from callback');
+                                logger.info(`Refresh token length: ${refreshToken.length}`);
+                            } else {
+                                logger.warn('No refresh token in callback URL');
+                            }
+                            resolve({ accessToken: token, refreshToken: refreshToken || undefined });
                         } else {
                             logger.error('No token in callback URL');
                             logger.error(`Raw query: ${uri.query}`);

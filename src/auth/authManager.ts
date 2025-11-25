@@ -150,19 +150,27 @@ export class AuthManager {
             logger.info('Starting EntraID authentication flow');
 
             // Start OAuth flow
-            const entraToken = await this.oauthService.authenticate(
+            const tokens = await this.oauthService.authenticate(
                 authModeResponse.tenantId!,
                 authModeResponse.clientId!,
                 authModeResponse.redirectUri!
             );
 
-            if (!entraToken) {
+            if (!tokens) {
                 logger.warn('EntraID authentication cancelled or failed');
                 return undefined;
             }
 
+            // Store refresh token if available
+            if (tokens.refreshToken) {
+                await this.context.secrets.store(REFRESH_TOKEN_KEY, tokens.refreshToken);
+                logger.info('Refresh token stored from OAuth callback');
+            } else {
+                logger.warn('No refresh token received from OAuth callback');
+            }
+
             // Exchange Entra token for RepoGate JWT
-            const authResponse = await this.exchangeEntraToken(entraToken);
+            const authResponse = await this.exchangeEntraToken(tokens.accessToken);
             if (!authResponse) {
                 return undefined;
             }
