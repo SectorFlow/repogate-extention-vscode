@@ -67,12 +67,44 @@ export async function activate(context: vscode.ExtensionContext) {
     // Check if bootstrap is needed
     if (!bootstrap.isBootstrapCompleted()) {
         logger.info('First run detected, starting bootstrap...');
-        const success = await bootstrap.bootstrapQueue(repoGateConfig);
-        
-        if (!success) {
-            statusBar.setStatus(RepoGateStatus.ERROR, 'Bootstrap failed');
-            notifications.showError('Failed to scan existing packages. Please check your API connection.');
-            return;
+        try {
+            const success = await bootstrap.bootstrapQueue(repoGateConfig);
+            
+            if (!success) {
+                // Bootstrap failed but don't block extension - it will retry on next activation
+                logger.warn('Bootstrap failed, but extension will continue');
+                statusBar.setStatus(RepoGateStatus.ERROR, 'Initial scan failed');
+                
+                // Show a non-blocking notification
+                vscode.window.showWarningMessage(
+                    'RepoGate: Initial dependency scan failed. The extension will retry on next startup.',
+                    'Retry Now',
+                    'Dismiss'
+                ).then(selection => {
+                    if (selection === 'Retry Now') {
+                        vscode.commands.executeCommand('repogate.scanNow');
+                    }
+                });
+            }
+        } catch (error: any) {
+            logger.error('Bootstrap error:', error);
+            
+            // Check if it's an auth error
+            if (error.message && error.message.includes('Authentication expired')) {
+                statusBar.setStatus(RepoGateStatus.DISABLED, 'Session expired');
+                vscode.window.showWarningMessage(
+                    'RepoGate: Your session has expired. Please sign in again.',
+                    'Sign In'
+                ).then(selection => {
+                    if (selection === 'Sign In') {
+                        vscode.commands.executeCommand('repogate.signInEntraID');
+                    }
+                });
+                return;
+            }
+            
+            // Other errors - continue but show warning
+            statusBar.setStatus(RepoGateStatus.ERROR, 'Initialization error');
         }
     } else {
         logger.info('Bootstrap already completed, skipping...');

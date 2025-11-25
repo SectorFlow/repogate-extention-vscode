@@ -2,7 +2,7 @@
   "name": "repogate",
   "displayName": "RepoGate",
   "description": "Security gatekeeper for your project dependencies. Validates dependencies against vulnerabilities before installation.",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "icon": "repogate_extension_icon.png",
   "publisher": "repogate",
   "engines": {

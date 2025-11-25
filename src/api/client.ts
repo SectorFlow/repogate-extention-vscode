@@ -129,17 +129,27 @@ export class RepoGateApiClient {
                     const refreshed = await this.authManager.refreshToken();
                     
                     if (refreshed) {
-                        logger.info('Token refreshed, retrying request');
+                        logger.info('Token refreshed successfully, retrying request');
                         this.isRefreshing = false;
                         
-                        // Retry the original request
+                        // Retry the original request with new token
                         return this.client.request(originalRequest);
+                    } else {
+                        logger.warn('Token refresh failed, clearing auth state');
+                        // Clear expired/invalid auth state
+                        await this.authManager.signOut();
+                        throw new Error('Authentication expired. Please sign in again.');
                     }
                 } catch (refreshError) {
-                    logger.error('Token refresh failed:', refreshError);
+                    logger.error('Token refresh error:', refreshError);
+                    this.isRefreshing = false;
+                    throw refreshError;
                 } finally {
                     this.isRefreshing = false;
                 }
+            } else {
+                // For LOCAL_TOKEN or unauthenticated, just reject
+                logger.error('401 error with non-refreshable auth mode');
             }
         }
 

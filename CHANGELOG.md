@@ -1,4 +1,24 @@
-# RepoGate VS Code Extension v1.10.0 - Changelog
+# RepoGate VS Code Extension - Changelog
+
+## v1.10.2 - 2025-11-25
+
+### 🐛 Bug Fixes
+
+- **Improved Token Expiration Handling**: Fixed issue where extension would fail to start properly when access token was expired. The extension now gracefully handles expired tokens and automatically attempts refresh on the first API call.
+- **Better Error Recovery**: When token refresh fails, the extension now provides clear guidance to the user with a single "Sign In" prompt instead of multiple confusing error messages.
+- **Non-Blocking Bootstrap**: Initial dependency scan failures no longer block the extension from starting. Users can retry the scan manually or it will automatically retry on next startup.
+- **Reduced Friction**: Eliminated duplicate sign-out prompts and improved the overall authentication flow to minimize interruptions to the developer workflow.
+
+### 🛠️ Technical Changes
+
+- Updated `ensureAuthOrPrompt()` to return expired config and let API client handle refresh, preventing blocking on startup
+- Improved `handleResponseError()` in API client to clear auth state and provide clear error messages when refresh fails
+- Enhanced bootstrap error handling with user-friendly retry options
+- Removed automatic sign-out from `refreshToken()` to prevent multiple simultaneous sign-out prompts
+
+---
+
+## v1.10.0 - 2025-11-24
 
 This version introduces a complete overhaul of the Microsoft Entra ID authentication flow to provide persistent sessions and a seamless developer experience.
 

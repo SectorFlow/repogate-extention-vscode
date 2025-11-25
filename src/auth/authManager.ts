@@ -85,17 +85,18 @@ export class AuthManager {
                 return existingConfig;
             }
             
-            // Try to refresh expired token on startup
+            // Token is expired - for Entra SSO, return config anyway and let API client handle refresh
+            // This prevents blocking extension activation on refresh attempts
             if (existingConfig.authMode === 'ENTRA_SSO') {
-                logger.info('Token expired on startup, attempting refresh...');
-                const refreshed = await this.refreshToken();
-                if (refreshed) {
-                    return await this.getConfig();
-                }
+                logger.info('Token expired, will attempt refresh on first API call');
+                return existingConfig;
             }
+            
+            // For LOCAL_TOKEN, token doesn't expire, so this means invalid token
+            logger.warn('Invalid LOCAL_TOKEN detected');
         }
 
-        // Not authenticated, prompt user
+        // Not authenticated or invalid token, prompt user
         await this.promptForAuth();
         return undefined;
     }
@@ -395,19 +396,10 @@ export class AuthManager {
             logger.info('Token refreshed successfully');
             return true;
         } catch (error: any) {
-            logger.error('Token refresh failed:', error);
+            logger.error('Token refresh failed:', error.response?.data || error.message);
             
-            // Clear expired token and prompt for re-authentication
-            await this.signOut();
-            vscode.window.showWarningMessage(
-                'Your session has expired. Please sign in again.',
-                'Sign In'
-            ).then(selection => {
-                if (selection === 'Sign In') {
-                    vscode.commands.executeCommand('repogate.signInEntraID');
-                }
-            });
-            
+            // Don't automatically sign out - let the caller decide
+            // This prevents multiple sign-out prompts when multiple API calls fail
             return false;
         }
     }
