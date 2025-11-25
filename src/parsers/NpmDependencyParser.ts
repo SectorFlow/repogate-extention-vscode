@@ -10,19 +10,19 @@ export class NpmDependencyParser extends BaseDependencyParser {
         const newDeps: DependencyInfo[] = [];
 
         try {
-            const previousDeps = this.extractDependencies(previousContent);
-            const currentDeps = this.extractDependencies(content);
-            const currentJson = JSON.parse(content);
+            const previousDeps = this.extractDependenciesWithVersions(previousContent);
+            const currentDeps = this.extractDependenciesWithVersions(content);
 
-            const allDeps = {
-                ...currentJson.dependencies,
-                ...currentJson.devDependencies
-            };
-
-            for (const dep of currentDeps) {
-                if (!previousDeps.has(dep)) {
-                    const version = allDeps[dep] || '';
-                    newDeps.push(this.createDependencyInfo(dep, version));
+            // Check for new packages and version changes
+            for (const [packageName, version] of currentDeps.entries()) {
+                const previousVersion = previousDeps.get(packageName);
+                
+                if (!previousVersion) {
+                    // New package added
+                    newDeps.push(this.createDependencyInfo(packageName, version));
+                } else if (previousVersion !== version) {
+                    // Version changed (upgrade or downgrade)
+                    newDeps.push(this.createDependencyInfo(packageName, version));
                 }
             }
         } catch (error) {
@@ -32,6 +32,40 @@ export class NpmDependencyParser extends BaseDependencyParser {
         return newDeps;
     }
 
+    /**
+     * Extract dependencies with their versions
+     */
+    private extractDependenciesWithVersions(content: string): Map<string, string> {
+        const deps = new Map<string, string>();
+
+        if (!content || content.trim() === '') {
+            return deps;
+        }
+
+        try {
+            const json = JSON.parse(content);
+
+            if (json.dependencies) {
+                Object.entries(json.dependencies).forEach(([name, version]) => {
+                    deps.set(name, version as string);
+                });
+            }
+
+            if (json.devDependencies) {
+                Object.entries(json.devDependencies).forEach(([name, version]) => {
+                    deps.set(name, version as string);
+                });
+            }
+        } catch (error) {
+            // Ignore parsing errors
+        }
+
+        return deps;
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     */
     private extractDependencies(content: string): Set<string> {
         const deps = new Set<string>();
 

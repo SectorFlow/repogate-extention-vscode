@@ -1,5 +1,30 @@
 # RepoGate VS Code Extension - Changelog
 
+## v1.10.4 - 2025-11-25
+
+### 🔒 Critical Security Enhancement
+
+- **Version Change Detection**: Extension now detects **all package version changes** (upgrades and downgrades) and submits them for security review
+- **Why This Matters**:
+  - New versions can introduce new vulnerabilities
+  - Supply chain attacks can compromise specific versions
+  - License changes between versions can violate company policy
+  - Downgrading to vulnerable versions is now caught
+- **What Changed**:
+  - Changing `"lodash": "4.17.20"` → `"lodash": "4.17.21"` now triggers approval request
+  - Works for all ecosystems: npm, Maven, and Gradle
+  - Both upgrades and downgrades are treated as new packages requiring review
+
+### 🛠️ Technical Changes
+
+- Updated `NpmDependencyParser` to track package name + version (not just name)
+- Updated `MavenDependencyParser` to detect version changes
+- Updated `GradleDependencyParser` to detect version changes
+- Added `extractDependenciesWithVersions()` method to all parsers
+- Version comparison now triggers approval workflow
+
+---
+
 ## v1.10.3 - 2025-11-25
 
 ### ✨ New Features

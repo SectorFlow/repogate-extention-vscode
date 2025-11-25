@@ -12,17 +12,18 @@ export class GradleDependencyParser extends BaseDependencyParser {
         const newDeps: DependencyInfo[] = [];
 
         try {
-            const previousDeps = this.extractDependencies(previousContent);
-            const currentDeps = this.extractDependencies(content);
+            const previousDeps = this.extractDependenciesWithVersions(previousContent);
+            const currentDeps = this.extractDependenciesWithVersions(content);
 
-            const matches = content.matchAll(this.DEPENDENCY_PATTERN);
-            for (const match of matches) {
-                const groupId = match[1].trim();
-                const artifactId = match[2].trim();
-                const version = match[3] ? match[3].trim() : '';
-                const fullName = `${groupId}:${artifactId}`;
-
-                if (!previousDeps.has(fullName) && currentDeps.has(fullName)) {
+            // Check for new packages and version changes
+            for (const [fullName, version] of currentDeps.entries()) {
+                const previousVersion = previousDeps.get(fullName);
+                
+                if (!previousVersion) {
+                    // New package added
+                    newDeps.push(this.createDependencyInfo(fullName, version));
+                } else if (previousVersion !== version) {
+                    // Version changed (upgrade or downgrade)
                     newDeps.push(this.createDependencyInfo(fullName, version));
                 }
             }
@@ -33,6 +34,35 @@ export class GradleDependencyParser extends BaseDependencyParser {
         return newDeps;
     }
 
+    /**
+     * Extract dependencies with their versions
+     */
+    private extractDependenciesWithVersions(content: string): Map<string, string> {
+        const deps = new Map<string, string>();
+
+        if (!content || content.trim() === '') {
+            return deps;
+        }
+
+        try {
+            const matches = content.matchAll(this.DEPENDENCY_PATTERN);
+            for (const match of matches) {
+                const groupId = match[1].trim();
+                const artifactId = match[2].trim();
+                const version = match[3] ? match[3].trim() : '';
+                const fullName = `${groupId}:${artifactId}`;
+                deps.set(fullName, version);
+            }
+        } catch (error) {
+            // Ignore parsing errors
+        }
+
+        return deps;
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     */
     private extractDependencies(content: string): Set<string> {
         const deps = new Set<string>();
 
