@@ -1,5 +1,25 @@
 # RepoGate VS Code Extension - Changelog
 
+## v1.10.5 - 2025-11-25
+
+### 🔄 Backend Compatibility Update
+
+- **Compatible with Backend Security Fix**: This version is tested and compatible with the backend update that treats package versions as unique entities
+- **Complete Version-Based Security**: Extension (v1.10.4 changes) + Backend (v1.10.5 compatibility) now provide complete version-aware security
+- **What This Means**:
+  - `bluebird@1.2.0` and `bluebird@5.2.9` are treated as completely separate packages
+  - Each version requires independent security approval
+  - Backend now checks name + version + ecosystem when determining approval status
+  - No more version bypass vulnerabilities
+
+### 📋 Recommended Upgrade Path
+
+1. Deploy updated backend (includes version-aware approval checks)
+2. Install extension v1.10.5
+3. Test version change detection with any package
+
+---
+
 ## v1.10.4 - 2025-11-25
 
 ### 🔒 Critical Security Enhancement
