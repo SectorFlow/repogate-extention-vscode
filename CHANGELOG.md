@@ -1,5 +1,26 @@
 # RepoGate VS Code Extension - Changelog
 
+## v1.10.3 - 2025-11-25
+
+### ✨ New Features
+
+- **Enhanced Denied Package Notifications**: Notifications now show detailed information including:
+  - Package name, version, and ecosystem
+  - Exact file location where the package is declared
+  - Reason for denial (security policy, vulnerability, etc.)
+- **View Full Report**: New button to see a comprehensive report in the Output panel with all denied packages and their details
+- **Copy Details**: New button to copy the full denied packages report to clipboard for sharing with team or documentation
+- **Better Visual Layout**: Improved notification formatting with clear separation between packages and their details
+
+### 🛠️ Technical Changes
+
+- Updated backend to return `packageDetails` array with full package information
+- Enhanced `HeartbeatResponse` interface to include `DeniedPackageDetail` type
+- Improved `handleDeniedPackagesAlert` to display rich package information
+- Maintained backward compatibility with existing `packages` array
+
+---
+
 ## v1.10.2 - 2025-11-25
 
 ### 🐛 Bug Fixes

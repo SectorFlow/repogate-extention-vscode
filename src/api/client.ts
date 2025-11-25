@@ -51,6 +51,14 @@ export interface UpdatePayload {
     repository?: boolean;
 }
 
+export interface DeniedPackageDetail {
+    name: string;
+    version?: string;
+    ecosystem: string;
+    filePath?: string;
+    reason: string;
+}
+
 export interface HeartbeatResponse {
     status: 'healthy' | 'warning';
     message: string;
@@ -61,6 +69,7 @@ export interface HeartbeatResponse {
         title: string;
         message: string;
         packages: string[];
+        packageDetails?: DeniedPackageDetail[];
     };
 }
 

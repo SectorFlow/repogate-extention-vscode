@@ -108,9 +108,29 @@ export class HeartbeatService {
         title: string;
         message: string;
         packages: string[];
+        packageDetails?: Array<{
+            name: string;
+            version?: string;
+            ecosystem: string;
+            filePath?: string;
+            reason: string;
+        }>;
     }): Promise<void> {
+        // Use detailed package info if available, otherwise fall back to simple names
+        const packageDetails: Array<{
+            name: string;
+            version?: string;
+            ecosystem: string;
+            filePath?: string;
+            reason: string;
+        }> = alert.packageDetails || alert.packages.map(name => ({
+            name,
+            ecosystem: 'unknown',
+            reason: 'Denied by security policy'
+        }));
+
         // Filter out packages we've already notified about
-        const newDeniedPackages = alert.packages.filter(pkg => !this.notifiedPackages.has(pkg));
+        const newDeniedPackages = packageDetails.filter(pkg => !this.notifiedPackages.has(pkg.name));
 
         if (newDeniedPackages.length === 0) {
             logger.debug('No new denied packages to notify about');
@@ -118,12 +138,18 @@ export class HeartbeatService {
         }
 
         // Mark these packages as notified
-        newDeniedPackages.forEach(pkg => this.notifiedPackages.add(pkg));
+        newDeniedPackages.forEach(pkg => this.notifiedPackages.add(pkg.name));
 
-        logger.warn(`Denied packages detected: ${newDeniedPackages.join(', ')}`);
+        logger.warn(`Denied packages detected: ${newDeniedPackages.map(p => p.name).join(', ')}`);
 
-        // Show notification with action buttons
-        const packageList = newDeniedPackages.map(pkg => `• ${pkg}`).join('\n');
+        // Build detailed package list for display
+        const packageList = newDeniedPackages.map(pkg => {
+            const version = pkg.version ? `@${pkg.version}` : '';
+            const location = pkg.filePath ? `\n  Location: ${pkg.filePath}` : '';
+            const reason = pkg.reason ? `\n  Reason: ${pkg.reason}` : '';
+            return `• ${pkg.name}${version} (${pkg.ecosystem})${location}${reason}`;
+        }).join('\n\n');
+
         const fullMessage = `${alert.message}\n\n${packageList}`;
 
         const action = await vscode.window.showWarningMessage(
@@ -132,20 +158,51 @@ export class HeartbeatService {
                 modal: true,
                 detail: fullMessage
             },
-            'View Details',
+            'View Full Report',
+            'Copy Details',
             'Dismiss'
         );
 
-        if (action === 'View Details') {
-            // Open output panel to show more details
-            logger.info('=== DENIED PACKAGES DETECTED ===');
+        if (action === 'View Full Report') {
+            // Create a detailed report in the output panel
+            logger.info('=== DENIED PACKAGES REPORT ===');
             logger.info(alert.message);
-            logger.info('Packages:');
-            newDeniedPackages.forEach(pkg => logger.info(`  - ${pkg}`));
-            logger.info('================================');
+            logger.info('');
+            logger.info(`Total denied packages: ${newDeniedPackages.length}`);
+            logger.info('');
+            
+            newDeniedPackages.forEach((pkg, index) => {
+                logger.info(`${index + 1}. ${pkg.name}${pkg.version ? '@' + pkg.version : ''}`);
+                logger.info(`   Ecosystem: ${pkg.ecosystem}`);
+                if (pkg.filePath) {
+                    logger.info(`   Location: ${pkg.filePath}`);
+                }
+                logger.info(`   Reason: ${pkg.reason}`);
+                logger.info('');
+            });
+            
+            logger.info('=== END REPORT ===');
             
             // Show output panel
             vscode.commands.executeCommand('workbench.action.output.show');
+        } else if (action === 'Copy Details') {
+            // Copy detailed information to clipboard
+            const reportText = [
+                '=== DENIED PACKAGES REPORT ===',
+                '',
+                `Total denied packages: ${newDeniedPackages.length}`,
+                '',
+                ...newDeniedPackages.map((pkg, index) => [
+                    `${index + 1}. ${pkg.name}${pkg.version ? '@' + pkg.version : ''}`,
+                    `   Ecosystem: ${pkg.ecosystem}`,
+                    pkg.filePath ? `   Location: ${pkg.filePath}` : null,
+                    `   Reason: ${pkg.reason}`,
+                    ''
+                ].filter(Boolean).join('\n'))
+            ].join('\n');
+            
+            await vscode.env.clipboard.writeText(reportText);
+            vscode.window.showInformationMessage('Denied packages report copied to clipboard');
         }
 
         // Also show notification via NotificationManager
