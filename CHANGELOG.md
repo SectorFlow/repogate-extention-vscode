@@ -1,5 +1,42 @@
 # RepoGate VS Code Extension - Changelog
 
+## v1.10.11 - 2025-11-26
+
+### ✨ New Features
+
+- **Clear All Data Command**: Added `repogate.clearAllData` command for troubleshooting
+  - Clears all secrets, globalState, bootstrap state, and diagnostics
+  - Modal confirmation to prevent accidental data loss
+  - Provides clean slate when extension gets into broken state
+  - Prompts user to sign in after clearing
+
+### 🐛 Bug Fixes
+
+- **Sign-in Timeout Protection**: Added 60-second timeout to prevent sign-in from hanging indefinitely
+- **Enhanced Sign-in Logging**: Extensive logging throughout authentication flow for better debugging
+- **Better Error Handling**: Full error messages with stack traces displayed in both logs and UI
+- **Error Visibility**: Sign-in errors now shown in both notifications and modal dialogs
+
+### 🛠️ Technical Changes
+
+- Sign-in commands now show detailed progress in Output panel
+- Error states properly reflected in status bar
+- Improved error recovery with clear user guidance
+
+---
+
+## v1.10.10 - 2025-11-26
+
+### 🐛 Bug Fixes
+
+- **Auto-detect Auth Mode**: Extension now automatically detects authentication mode from existing tokens
+  - Fixes issue where settings page showed "Signed in" but extension showed "Not authenticated"
+  - When extension is reinstalled, it now recovers authentication state from stored tokens
+  - No need to re-authenticate after extension updates or reinstalls
+- **Seamless Recovery**: Extension automatically restores `authMode` to globalState when tokens exist
+
+---
+
 ## v1.10.5 - 2025-11-25
 
 ### 🔄 Backend Compatibility Update
