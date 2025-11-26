@@ -554,10 +554,12 @@ export class AuthManager {
             return undefined;
         }
 
-        // Check if we actually have a valid token
-        const token = this.context.globalState.get<string>('token');
-        if (!token) {
-            logger.warn('No token found, getUserInfo returning undefined');
+        // Check if we actually have a valid token (stored in secrets, not globalState)
+        const apiToken = await this.context.secrets.get(TOKEN_KEY);
+        const accessToken = await this.context.secrets.get(ACCESS_TOKEN_KEY);
+        
+        if (!apiToken && !accessToken) {
+            logger.warn('No token found in secrets, getUserInfo returning undefined');
             return undefined;
         }
 
