@@ -261,6 +261,13 @@ function registerCommands(context: vscode.ExtensionContext) {
         })
     );
 
+    // Clear All Data command (for troubleshooting)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('repogate.clearAllData', async () => {
+            await clearAllData();
+        })
+    );
+
     logger.info('Commands registered');
 }
 
@@ -273,7 +280,16 @@ async function signInEntraID() {
         logger.show(); // Show output panel for debugging
         statusBar.setStatus(RepoGateStatus.PENDING, 'Signing in...');
         
-        const config = await authManager.authenticateWithEntraID();
+        logger.info('Calling authManager.authenticateWithEntraID()...');
+        
+        // Add timeout to prevent hanging
+        const authPromise = authManager.authenticateWithEntraID();
+        const timeoutPromise = new Promise<undefined>((_, reject) => 
+            setTimeout(() => reject(new Error('Sign-in timeout after 60 seconds')), 60000)
+        );
+        
+        const config = await Promise.race([authPromise, timeoutPromise]);
+        logger.info('Authentication completed');
         
         if (config && config.authMode === 'ENTRA_SSO') {
             const userInfo = await authManager.getUserInfo();
@@ -307,7 +323,10 @@ async function signInEntraID() {
             await updateAuthStatus();
         }
     } catch (error: any) {
+        logger.error('=== Sign in error ===', error);
+        logger.error('Error stack:', error.stack);
         notifications.showError(`Sign in failed: ${error.message}`);
+        vscode.window.showErrorMessage(`RepoGate sign-in failed: ${error.message}`);
         statusBar.setStatus(RepoGateStatus.ERROR, 'Sign in failed');
         logger.error('Sign in error:', error);
     }
@@ -355,7 +374,10 @@ async function signInAPIToken() {
             await updateAuthStatus();
         }
     } catch (error: any) {
+        logger.error('=== Sign in error ===', error);
+        logger.error('Error stack:', error.stack);
         notifications.showError(`Sign in failed: ${error.message}`);
+        vscode.window.showErrorMessage(`RepoGate sign-in failed: ${error.message}`);
         statusBar.setStatus(RepoGateStatus.ERROR, 'Sign in failed');
         logger.error('Sign in error:', error);
     }
@@ -820,6 +842,60 @@ function updateStatusBarCounts() {
         statusBar.setPendingCount(counts.pending + counts.scanning);
         statusBar.setDeniedCount(counts.denied);
     }, 2000);
+}
+
+/**
+ * Clear All Data command implementation (for troubleshooting)
+ */
+async function clearAllData() {
+    try {
+        logger.info('=== Clear All Data command triggered ===');
+        logger.show();
+        
+        const confirmation = await vscode.window.showWarningMessage(
+            'This will sign you out and clear all RepoGate data. Continue?',
+            { modal: true },
+            'Yes, Clear Everything',
+            'Cancel'
+        );
+        
+        if (confirmation !== 'Yes, Clear Everything') {
+            logger.info('Clear all data cancelled by user');
+            return;
+        }
+        
+        logger.info('Clearing all RepoGate data...');
+        
+        // Sign out (clears secrets and globalState)
+        await authManager.signOut();
+        logger.info('Signed out and cleared auth data');
+        
+        // Clear bootstrap state
+        bootstrap.resetBootstrap();
+        logger.info('Bootstrap state cleared');
+        
+        // Clear diagnostics
+        diagnostics.clearAll();
+        logger.info('Diagnostics cleared');
+        
+        // Update UI
+        statusBar.setStatus(RepoGateStatus.DISABLED, 'Not signed in');
+        await updateAuthStatus();
+        
+        vscode.window.showInformationMessage(
+            'RepoGate data cleared successfully. Please sign in again.',
+            'Sign In'
+        ).then(selection => {
+            if (selection === 'Sign In') {
+                vscode.commands.executeCommand('repogate.signInEntraID');
+            }
+        });
+        
+        logger.info('Clear all data completed');
+    } catch (error: any) {
+        logger.error('Clear all data error:', error);
+        vscode.window.showErrorMessage(`Failed to clear data: ${error.message}`);
+    }
 }
 
 export function deactivate() {
